@@ -42,28 +42,28 @@ export default function SmartLockerDashboard() {
             {/* Total Lockers Card */}
             <div className="metric-card total">
               <h3 className="metric-title">Total Lockers</h3>
-              <p className="metric-value">8</p>
+              <p className="metric-value">{systemMetrics.totalLockers}</p>
               <p className="metric-subtitle">All units in system</p>
             </div>
 
             {/* Available Lockers Card */}
             <div className="metric-card available">
               <h3 className="metric-title">Available Lockers</h3>
-              <p className="metric-value">3</p>
+              <p className="metric-value">{systemMetrics.availableLockers}</p>
               <p className="metric-subtitle">Ready to use</p>
             </div>
 
             {/* Occupied Lockers Card */}
             <div className="metric-card occupied">
               <h3 className="metric-title">Occupied Lockers</h3>
-              <p className="metric-value">3</p>
+              <p className="metric-value">{systemMetrics.occupiedLockers}</p>
               <p className="metric-subtitle">Currently in use</p>
             </div>
 
             {/* Expired Rentals Card */}
             <div className="metric-card expired">
               <h3 className="metric-title">Expired Rentals</h3>
-              <p className="metric-value">2</p>
+              <p className="metric-value">{systemMetrics.expiredRentals}</p>
               <p className="metric-subtitle">Require attention</p>
             </div>
           </div>
