@@ -8,6 +8,9 @@ import {
 } from "../data/mockData";
 import "../styles/dashboard.css";
 
+
+
+
 export default function SmartLockerDashboard() {
   return (
     <div className="dashboard-container">
@@ -15,7 +18,7 @@ export default function SmartLockerDashboard() {
       <header className="dashboard-header">
         <div className="header-content">
           <h1 className="system-title">
-            🔐 IoT Smart Locker Vending System
+            🔐 Locket
           </h1>
           <div className="admin-info">
             <span className="admin-label">Administrator:</span>
@@ -24,6 +27,9 @@ export default function SmartLockerDashboard() {
           </div>
         </div>
       </header>
+
+
+
 
       {/* Main Content Section */}
       <main className="dashboard-main">
@@ -34,28 +40,28 @@ export default function SmartLockerDashboard() {
             {/* Total Lockers Card */}
             <div className="metric-card total">
               <h3 className="metric-title">Total Lockers</h3>
-              <p className="metric-value">{systemMetrics.totalLockers}</p>
+              <p className="metric-value">8</p>
               <p className="metric-subtitle">All units in system</p>
             </div>
 
             {/* Available Lockers Card */}
             <div className="metric-card available">
               <h3 className="metric-title">Available Lockers</h3>
-              <p className="metric-value">{systemMetrics.availableLockers}</p>
+              <p className="metric-value">3</p>
               <p className="metric-subtitle">Ready to use</p>
             </div>
 
             {/* Occupied Lockers Card */}
             <div className="metric-card occupied">
               <h3 className="metric-title">Occupied Lockers</h3>
-              <p className="metric-value">{systemMetrics.occupiedLockers}</p>
+              <p className="metric-value">3</p>
               <p className="metric-subtitle">Currently in use</p>
             </div>
 
             {/* Expired Rentals Card */}
             <div className="metric-card expired">
               <h3 className="metric-title">Expired Rentals</h3>
-              <p className="metric-value">{systemMetrics.expiredRentals}</p>
+              <p className="metric-value">2</p>
               <p className="metric-subtitle">Require attention</p>
             </div>
           </div>
@@ -74,10 +80,6 @@ export default function SmartLockerDashboard() {
                   </span>
                 </div>
                 <div className="locker-details">
-                  <p className="detail-row">
-                    <span className="label">Capacity:</span>
-                    <span className="value">{locker.capacity}</span>
-                  </p>
                   <p className="detail-row">
                     <span className="label">Time Remaining:</span>
                     <span className="value">{locker.timeRemaining}</span>

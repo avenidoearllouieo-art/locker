@@ -22,7 +22,7 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--light-bg);
+  background-color: #F6F6F2;
   color: var(--dark-text);
   line-height: 1.6;
 }
@@ -35,7 +35,7 @@ body {
 
 /* Header Styles */
 .dashboard-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: #388087;
   color: white;
   padding: 2rem 1rem;
   box-shadow: var(--shadow);
@@ -87,16 +87,15 @@ body {
 /* Main Content */
 .dashboard-main {
   flex: 1;
-  max-width: 1400px;
   width: 100%;
-  margin: 0 auto;
   padding: 2rem 1rem;
+  overflow-y: auto;
 }
 
 .section-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--dark-text);
+  color: #BADFE7;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 3px solid var(--primary-color);
@@ -306,22 +305,22 @@ body {
 
 .notification-item.warning {
   border-left: 4px solid var(--warning-color);
-  background-color: rgba(247, 127, 0, 0.05);
+  background-color: #F6F6F2;
 }
 
 .notification-item.info {
   border-left: 4px solid var(--info-color);
-  background-color: rgba(67, 97, 238, 0.05);
+  background-color: #F6F6F2;
 }
 
 .notification-item.alert {
   border-left: 4px solid var(--danger-color);
-  background-color: rgba(214, 40, 40, 0.05);
+  background-color: #F6F6F2;
 }
 
 .notification-item.success {
   border-left: 4px solid var(--success-color);
-  background-color: rgba(6, 168, 125, 0.05);
+  background-color: #F6F6F2;
 }
 
 .notification-icon {
@@ -339,7 +338,7 @@ body {
 }
 
 .notification-message {
-  color: var(--dark-text);
+  color: #C2EDCE;
   font-size: 0.95rem;
   font-weight: 500;
 }
@@ -358,8 +357,8 @@ body {
 
 /* Footer Styles */
 .dashboard-footer {
-  background-color: var(--dark-text);
-  color: white;
+  background-color:#388087;
+  color: #F6F6F2;
   padding: 2rem 1rem;
   text-align: center;
   margin-top: auto;
@@ -454,5 +453,8 @@ body {
 
   .notification-icon {
     font-size: 1.25rem;
+  }
+  p{
+    color: #BADFE7;
   }
 }

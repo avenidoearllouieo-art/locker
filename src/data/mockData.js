@@ -5,10 +5,10 @@ export const adminUser = {
 };
 
 export const systemMetrics = {
-  totalLockers: 50,
-  availableLockers: 18,
-  occupiedLockers: 28,
-  expiredRentals: 4
+  totalLockers: 8,
+  availableLockers: 3,
+  occupiedLockers: 3,
+  expiredRentals: 2
 };
 
 export const lockersData = [
@@ -17,56 +17,48 @@ export const lockersData = [
     status: "Available",
     timeRemaining: "--",
     user: null,
-    capacity: "Large"
   },
   {
     lockerId: "LOC-002",
     status: "Occupied",
     timeRemaining: "2 hours 30 minutes",
-    user: "John Doe",
-    capacity: "Medium"
+    user: "Chrsitian Ramiro",
   },
   {
     lockerId: "LOC-003",
     status: "Occupied",
     timeRemaining: "5 hours 15 minutes",
-    user: "Emma Wilson",
-    capacity: "Large"
+    user: "Earl avenido",
   },
   {
     lockerId: "LOC-004",
     status: "Available",
     timeRemaining: "--",
     user: null,
-    capacity: "Small"
   },
   {
     lockerId: "LOC-005",
     status: "Expired",
     timeRemaining: "Overdue by 1 hour",
-    user: "Michael Chen",
-    capacity: "Medium"
+    user: "Kurt bagares",
   },
   {
     lockerId: "LOC-006",
     status: "Occupied",
     timeRemaining: "8 hours 45 minutes",
-    user: "Lisa Anderson",
-    capacity: "Large"
+    user: "Ryan Paderanga",
   },
   {
     lockerId: "LOC-007",
     status: "Available",
     timeRemaining: "--",
     user: null,
-    capacity: "Small"
   },
   {
     lockerId: "LOC-008",
     status: "Expired",
     timeRemaining: "Overdue by 2 hours 30 minutes",
-    user: "David Martinez",
-    capacity: "Medium"
+    user: "Shelly bulanon",
   }
 ];
 
