@@ -1,6 +1,6 @@
 // Mock data for IoT Smart Locker Vending System
 export const adminUser = {
-  name: "Sarah Johnson",
+  name: "Ramiro",
   role: "System Administrator"
 };
 

@@ -7,6 +7,7 @@ import {
   systemStatus
 } from "../data/mockData";
 import "../styles/dashboard.css";
+import logoImg from "../logo.png";
 
 
 
@@ -18,7 +19,8 @@ export default function SmartLockerDashboard() {
       <header className="dashboard-header">
         <div className="header-content">
           <h1 className="system-title">
-            🔐 Locket
+            <img src={logoImg} alt="Locket Logo" className="logo-img" />
+            Locket
           </h1>
           <div className="admin-info">
             <span className="admin-label">Administrator:</span>
