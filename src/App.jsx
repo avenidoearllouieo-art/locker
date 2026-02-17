@@ -1,12 +1,9 @@
-import Header from "./components/Header";
-import AdminDashboard from "./pages/AdminDashboard";
-import "./styles/dashboard.css";
+import SmartLockerDashboard from "./pages/SmartLockerDashboard";
 
 function App() {
   return (
-    <div>
-      <Header />
-      <AdminDashboard />
+    <div className="app-container">
+      <SmartLockerDashboard />
     </div>
   );
 }

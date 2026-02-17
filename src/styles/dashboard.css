@@ -1,24 +1,458 @@
+/* IoT Smart Locker Dashboard Styles */
+
+:root {
+  --primary-color: #0066cc;
+  --secondary-color: #00b4d8;
+  --danger-color: #d62828;
+  --warning-color: #f77f00;
+  --success-color: #06a77d;
+  --info-color: #4361ee;
+  --light-bg: #f0f4f8;
+  --dark-text: #1a1a2e;
+  --border-color: #e0e0e0;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f2f2f2;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--light-bg);
+  color: var(--dark-text);
+  line-height: 1.6;
 }
 
-header {
-  background-color: #003366;
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header Styles */
+.dashboard-header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: white;
-  padding: 15px;
+  padding: 2rem 1rem;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-main {
-  padding: 20px;
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
 }
 
-section {
+.system-title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.admin-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.admin-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.admin-name {
+  font-weight: 600;
+}
+
+.admin-role {
+  opacity: 0.8;
+  font-size: 0.85rem;
+}
+
+/* Main Content */
+.dashboard-main {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--dark-text);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid var(--primary-color);
+  display: inline-block;
+}
+
+/* Metrics Section */
+.metrics-section {
+  margin-bottom: 3rem;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.metric-card {
   background: white;
-  padding: 15px;
-  border-radius: 5px;
+  padding: 1.75rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-left: 5px solid;
+  cursor: pointer;
 }
 
-li {
-  padding: 8px;
+.metric-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-hover);
+}
+
+.metric-card.total {
+  border-left-color: var(--primary-color);
+}
+
+.metric-card.available {
+  border-left-color: var(--success-color);
+}
+
+.metric-card.occupied {
+  border-left-color: var(--info-color);
+}
+
+.metric-card.expired {
+  border-left-color: var(--danger-color);
+}
+
+.metric-title {
+  font-size: 0.95rem;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--dark-text);
+  margin-bottom: 0.5rem;
+}
+
+.metric-subtitle {
+  font-size: 0.9rem;
+  color: #999;
+}
+
+/* Lockers Section */
+.lockers-section {
+  margin-bottom: 3rem;
+}
+
+.lockers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.locker-card {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+  border-top: 4px solid;
+}
+
+.locker-card.available {
+  border-top-color: var(--success-color);
+}
+
+.locker-card.occupied {
+  border-top-color: var(--info-color);
+}
+
+.locker-card.expired {
+  border-top-color: var(--danger-color);
+}
+
+.locker-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.locker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.locker-id {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--dark-text);
+}
+
+.status-badge {
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.status-badge.available {
+  background-color: #e8f8f5;
+  color: var(--success-color);
+}
+
+.status-badge.occupied {
+  background-color: #e7f3ff;
+  color: var(--info-color);
+}
+
+.status-badge.expired {
+  background-color: #ffe8e8;
+  color: var(--danger-color);
+}
+
+.locker-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row .label {
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-row .value {
+  color: var(--dark-text);
+  font-weight: 600;
+}
+
+/* Notifications Section */
+.notifications-section {
+  margin-bottom: 3rem;
+}
+
+.notifications-list {
+  background: white;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.notification-items {
+  list-style: none;
+}
+
+.notification-item {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s ease;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  background-color: var(--light-bg);
+}
+
+.notification-item.warning {
+  border-left: 4px solid var(--warning-color);
+  background-color: rgba(247, 127, 0, 0.05);
+}
+
+.notification-item.info {
+  border-left: 4px solid var(--info-color);
+  background-color: rgba(67, 97, 238, 0.05);
+}
+
+.notification-item.alert {
+  border-left: 4px solid var(--danger-color);
+  background-color: rgba(214, 40, 40, 0.05);
+}
+
+.notification-item.success {
+  border-left: 4px solid var(--success-color);
+  background-color: rgba(6, 168, 125, 0.05);
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: center;
+}
+
+.notification-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.notification-message {
+  color: var(--dark-text);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.notification-time {
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.no-notifications {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+  font-style: italic;
+}
+
+/* Footer Styles */
+.dashboard-footer {
+  background-color: var(--dark-text);
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+  margin-top: auto;
+  border-top: 3px solid var(--primary-color);
+}
+
+.footer-status {
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+}
+
+.footer-copyright {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .system-title {
+    font-size: 1.5rem;
+  }
+
+  .admin-info {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dashboard-main {
+    padding: 1rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .metric-card {
+    padding: 1.25rem;
+  }
+
+  .metric-value {
+    font-size: 2rem;
+  }
+
+  .metric-title {
+    font-size: 0.85rem;
+  }
+
+  .lockers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .system-title {
+    font-size: 1.25rem;
+  }
+
+  .metric-value {
+    font-size: 1.75rem;
+  }
+
+  .locker-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .notification-item {
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .notification-icon {
+    font-size: 1.25rem;
+  }
 }
