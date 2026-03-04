@@ -1,34 +1,119 @@
-import React from "react";
+import React, { useState, useEffect, useReducer, useMemo, useCallback } from "react";
 import {
   adminUser,
-  systemMetrics,
   lockersData,
   notificationsData,
   systemStatus
 } from "../data/mockData";
 import "../styles/dashboard.css";
-import logoImg from "../logo.png";
+import Navbar from "../components/Navbar";
+import LockerCard from "../components/LockerCard";
 
-
+// helper functions
+function parseTime(str) {
+  if (!str || str === "--") return 0;
+  let seconds = 0;
+  const hrMatch = str.match(/(\d+)\s*hour/);
+  if (hrMatch) seconds += parseInt(hrMatch[1], 10) * 3600;
+  const minMatch = str.match(/(\d+)\s*minute/);
+  if (minMatch) seconds += parseInt(minMatch[1], 10) * 60;
+  return seconds;
+}
 
 
 export default function SmartLockerDashboard() {
+  const initialLockers = lockersData.map((l) => ({
+    ...l,
+    timeLeft: parseTime(l.timeRemaining) // rename for brevity
+  }));
+
+  function reducer(state, action) {
+    switch (action.type) {
+      case "TICK":
+        return state.map((l) => {
+          if (l.timeLeft > 0) {
+            const newTime = l.timeLeft - 1;
+            const updates = { timeLeft: newTime };
+            if (newTime === 300) {
+              action.notify(`5 minutes remaining for ${l.lockerId}`);
+            }
+            if (newTime <= 0) {
+              return {
+                ...l,
+                status: "Available",
+                timeLeft: 0,
+                user: null
+              };
+            }
+            return { ...l, ...updates };
+          }
+          return l;
+        });
+      case "OPEN":
+        return state.map((l) =>
+          l.lockerId === action.id && l.status === "Available"
+            ? {
+                ...l,
+                status: "In Use",
+                timeLeft: action.duration,
+                user: "Guest User"
+              }
+            : l
+        );
+      case "CLOSE":
+        return state.map((l) =>
+          l.lockerId === action.id
+            ? { ...l, status: "Available", timeLeft: 0, user: null }
+            : l
+        );
+      default:
+        return state;
+    }
+  }
+
+  const [notifications, setNotifications] = useState(notificationsData);
+
+  const addNotification = (message) => {
+    setNotifications((prev) => [
+      ...prev,
+      { id: Date.now(), message, timestamp: "just now", type: "info" }
+    ]);
+  };
+
+  const [lockers, dispatch] = useReducer(reducer, initialLockers);
+
+  // tick interval
+  useEffect(() => {
+    const timer = setInterval(() => {
+      dispatch({ type: "TICK", notify: (msg) => addNotification(msg) });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleOpen = React.useCallback(
+    (id) => dispatch({ type: "OPEN", id, duration: 600 }),
+    []
+  );
+
+  const handleClose = React.useCallback(
+    (id) => dispatch({ type: "CLOSE", id }),
+    []
+  );
+
+  // metrics memoized
+  const metrics = React.useMemo(() => {
+    const total = lockers.length;
+    const available = lockers.filter((l) => l.status === "Available").length;
+    const occupied = lockers.filter(
+      (l) => l.status === "In Use" || l.status === "Occupied"
+    ).length;
+    const expired = lockers.filter((l) => l.status === "Expired").length;
+    return { total, available, occupied, expired };
+  }, [lockers]);
+
   return (
     <div className="dashboard-container">
-      {/* Header Section */}
-      <header className="dashboard-header">
-        <div className="header-content">
-          <h1 className="system-title">
-            <img src={logoImg} alt="Locket Logo" className="logo-img" />
-            Locket
-          </h1>
-          <div className="admin-info">
-            <span className="admin-label">Administrator:</span>
-            <span className="admin-name">{adminUser.name}</span>
-            <span className="admin-role">({adminUser.role})</span>
-          </div>
-        </div>
-      </header>
+      <Navbar title="Locket" admin={adminUser} />
 
 
 
@@ -39,31 +124,31 @@ export default function SmartLockerDashboard() {
         <section className="metrics-section">
           <h2 className="section-title">System Metrics</h2>
           <div className="metrics-grid">
-            {/* Total Lockers Card */}
+                {/* Total Lockers Card */}
             <div className="metric-card total">
               <h3 className="metric-title">Total Lockers</h3>
-              <p className="metric-value">{systemMetrics.totalLockers}</p>
+              <p className="metric-value">{metrics.total}</p>
               <p className="metric-subtitle">All units in system</p>
             </div>
 
             {/* Available Lockers Card */}
             <div className="metric-card available">
               <h3 className="metric-title">Available Lockers</h3>
-              <p className="metric-value">{systemMetrics.availableLockers}</p>
+              <p className="metric-value">{metrics.available}</p>
               <p className="metric-subtitle">Ready to use</p>
             </div>
 
             {/* Occupied Lockers Card */}
             <div className="metric-card occupied">
               <h3 className="metric-title">Occupied Lockers</h3>
-              <p className="metric-value">{systemMetrics.occupiedLockers}</p>
+              <p className="metric-value">{metrics.occupied}</p>
               <p className="metric-subtitle">Currently in use</p>
             </div>
 
             {/* Expired Rentals Card */}
             <div className="metric-card expired">
               <h3 className="metric-title">Expired Rentals</h3>
-              <p className="metric-value">{systemMetrics.expiredRentals}</p>
+              <p className="metric-value">{metrics.expired}</p>
               <p className="metric-subtitle">Require attention</p>
             </div>
           </div>
@@ -73,27 +158,13 @@ export default function SmartLockerDashboard() {
         <section className="lockers-section">
           <h2 className="section-title">Locker Status</h2>
           <div className="lockers-grid">
-            {lockersData.map((locker) => (
-              <div key={locker.lockerId} className={`locker-card ${locker.status.toLowerCase()}`}>
-                <div className="locker-header">
-                  <span className="locker-id">{locker.lockerId}</span>
-                  <span className={`status-badge ${locker.status.toLowerCase()}`}>
-                    {locker.status}
-                  </span>
-                </div>
-                <div className="locker-details">
-                  <p className="detail-row">
-                    <span className="label">Time Remaining:</span>
-                    <span className="value">{locker.timeRemaining}</span>
-                  </p>
-                  {locker.user && (
-                    <p className="detail-row">
-                      <span className="label">User:</span>
-                      <span className="value">{locker.user}</span>
-                    </p>
-                  )}
-                </div>
-              </div>
+            {lockers.map((locker) => (
+              <LockerCard
+                key={locker.lockerId}
+                locker={locker}
+                onOpen={handleOpen}
+                onClose={handleClose}
+              />
             ))}
           </div>
         </section>
@@ -102,9 +173,9 @@ export default function SmartLockerDashboard() {
         <section className="notifications-section">
           <h2 className="section-title">System Notifications</h2>
           <div className="notifications-list">
-            {notificationsData.length > 0 ? (
+            {notifications.length > 0 ? (
               <ul className="notification-items">
-                {notificationsData.map((notification) => (
+                {notifications.map((notification) => (
                   <li
                     key={notification.id}
                     className={`notification-item ${notification.type}`}

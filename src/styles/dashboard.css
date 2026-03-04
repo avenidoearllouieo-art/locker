@@ -202,6 +202,10 @@ body {
   border-top-color: var(--info-color);
 }
 
+.locker-card.in-use {
+  border-top-color: var(--danger-color);
+}
+
 .locker-card.expired {
   border-top-color: var(--danger-color);
 }
@@ -250,10 +254,50 @@ body {
   color: var(--danger-color);
 }
 
-.locker-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+/* new styles for in-use state (mapped from "In Use") */
+.status-badge.in-use {
+  background-color: #ffe8e8;
+  color: var(--danger-color);
+}
+
+/* timer display component */
+.timer-display {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 0.75rem;
+}
+
+.timer-display.warning {
+  color: var(--danger-color);
+}
+
+/* generic button */
+.btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn.secondary {
+  background-color: var(--danger-color);
+}
+
+.btn:hover:not(.disabled) {
+  background-color: #005bb5;
+  transform: translateY(-2px);
+}
+
+.btn.disabled,
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .detail-row {
