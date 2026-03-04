@@ -8,6 +8,8 @@ import {
 import "../styles/dashboard.css";
 import Navbar from "../components/Navbar";
 import LockerCard from "../components/LockerCard";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 // helper functions
 function parseTime(str) {
@@ -73,6 +75,9 @@ export default function SmartLockerDashboard() {
 
   const [notifications, setNotifications] = useState(notificationsData);
 
+  const { selectedLocker, setSelectedLocker, logout, user } = useAuth();
+  const navigate = useNavigate();
+
   const addNotification = (message) => {
     setNotifications((prev) => [
       ...prev,
@@ -91,8 +96,12 @@ export default function SmartLockerDashboard() {
   }, []);
 
   const handleOpen = React.useCallback(
-    (id) => dispatch({ type: "OPEN", id, duration: 600 }),
-    []
+    (id) => {
+      setSelectedLocker(id);
+      addNotification(`${id} opened for you`);
+      dispatch({ type: "OPEN", id, duration: 600 });
+    },
+    [setSelectedLocker]
   );
 
   const handleClose = React.useCallback(
@@ -113,13 +122,21 @@ export default function SmartLockerDashboard() {
 
   return (
     <div className="dashboard-container">
-      <Navbar title="Locket" admin={adminUser} />
+      <Navbar title="Locket" admin={adminUser} onLogout={() => { logout(); navigate('/login'); }} user={user} />
 
 
 
 
       {/* Main Content Section */}
       <main className="dashboard-main">
+        {selectedLocker && (
+          <div className="selected-locker-banner">
+            Selected Locker: {selectedLocker}
+            <button className="btn secondary" onClick={() => { setSelectedLocker(null); }}>
+              Clear
+            </button>
+          </div>
+        )}
         {/* System Metrics Section */}
         <section className="metrics-section">
           <h2 className="section-title">System Metrics</h2>
