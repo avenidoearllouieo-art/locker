@@ -9,6 +9,7 @@ import "../styles/dashboard.css";
 import Navbar from "../components/Navbar";
 import LockerCard from "../components/LockerCard";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 import { useNavigate } from "react-router-dom";
 
 // helper functions
@@ -73,40 +74,35 @@ export default function SmartLockerDashboard() {
     }
   }
 
-  const [notifications, setNotifications] = useState(notificationsData);
-
   const { selectedLocker, setSelectedLocker, logout, user } = useAuth();
+  const { addNotification, notifications, removeNotification, clearNotifications } = useNotifications();
   const navigate = useNavigate();
-
-  const addNotification = (message) => {
-    setNotifications((prev) => [
-      ...prev,
-      { id: Date.now(), message, timestamp: "just now", type: "info" }
-    ]);
-  };
 
   const [lockers, dispatch] = useReducer(reducer, initialLockers);
 
   // tick interval
   useEffect(() => {
     const timer = setInterval(() => {
-      dispatch({ type: "TICK", notify: (msg) => addNotification(msg) });
+      dispatch({ type: "TICK", notify: (msg) => addNotification(msg, 'warning', 'system') });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [addNotification]);
 
   const handleOpen = React.useCallback(
     (id) => {
       setSelectedLocker(id);
-      addNotification(`${id} opened for you`);
+      addNotification(`${id} opened successfully. Rental period started.`, 'success', 'locker');
       dispatch({ type: "OPEN", id, duration: 600 });
     },
-    [setSelectedLocker]
+    [setSelectedLocker, addNotification]
   );
 
   const handleClose = React.useCallback(
-    (id) => dispatch({ type: "CLOSE", id }),
-    []
+    (id) => {
+      addNotification(`${id} has been released and is now available.`, 'info', 'locker');
+      dispatch({ type: "CLOSE", id });
+    },
+    [addNotification]
   );
 
   // metrics memoized
@@ -188,7 +184,14 @@ export default function SmartLockerDashboard() {
 
         {/* Notifications Section */}
         <section className="notifications-section">
-          <h2 className="section-title">System Notifications</h2>
+          <div className="notifications-header">
+            <h2 className="section-title">System Notifications</h2>
+            {notifications.length > 0 && (
+              <button className="btn secondary clear-notifications-btn" onClick={() => clearNotifications()}>
+                Clear All
+              </button>
+            )}
+          </div>
           <div className="notifications-list">
             {notifications.length > 0 ? (
               <ul className="notification-items">
@@ -211,6 +214,13 @@ export default function SmartLockerDashboard() {
                         {notification.timestamp}
                       </span>
                     </div>
+                    <button 
+                      className="notification-delete-btn"
+                      onClick={() => removeNotification(notification.id)}
+                      aria-label="Delete notification"
+                    >
+                      ✕
+                    </button>
                   </li>
                 ))}
               </ul>

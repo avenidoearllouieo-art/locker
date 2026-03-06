@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SmartLockerDashboard from "./pages/SmartLockerDashboard";
 import Login from "./pages/Login";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
+import NotificationListener from "./components/NotificationListener";
 
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
@@ -19,11 +21,15 @@ function AppRoutes() {
 export default function App() {
   return (
     <div className="app-container">
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <NotificationListener>
+              <AppRoutes />
+            </NotificationListener>
+          </BrowserRouter>
+        </AuthProvider>
+      </NotificationProvider>
     </div>
   );
 }

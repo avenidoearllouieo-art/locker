@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNotifications } from "./NotificationContext";
 
 const AuthContext = createContext(null);
 
@@ -6,6 +7,7 @@ export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [selectedLocker, setSelectedLocker] = useState(null);
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     // optional: restore session from sessionStorage
@@ -22,16 +24,26 @@ export function AuthProvider({ children }) {
     sessionStorage.setItem("auth", JSON.stringify({ isLoggedIn, user, selectedLocker }));
   }, [isLoggedIn, user, selectedLocker]);
 
+  // Real-time notification for locker selection changes
+  useEffect(() => {
+    if (selectedLocker && isLoggedIn) {
+      addNotification(`Locker ${selectedLocker} has been selected for operation.`, 'info', 'locker');
+    }
+  }, [selectedLocker, isLoggedIn, addNotification]);
+
   const login = ({ username }) => {
     setIsLoggedIn(true);
     setUser({ name: username });
+    addNotification(`Welcome back, ${username}! You have successfully logged in.`, 'success', 'auth');
   };
 
   const logout = () => {
+    const username = user?.name || 'User';
     setIsLoggedIn(false);
     setUser(null);
     setSelectedLocker(null);
     sessionStorage.removeItem("auth");
+    addNotification(`${username} has logged out successfully.`, 'info', 'auth');
   };
 
   return (

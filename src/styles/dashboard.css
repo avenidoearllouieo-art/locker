@@ -325,6 +325,24 @@ body {
 
 /* Notifications Section */
 .notifications-section {
+  margin-top: 2rem;
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid var(--primary-color);
+}
+
+.clear-notifications-btn {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+.notifications-section {
   margin-bottom: 3rem;
 }
 
@@ -342,10 +360,12 @@ body {
 
 .notification-item {
   display: flex;
-  gap: 1.25rem;
-  padding: 1.25rem;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
   border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .notification-item:last-child {
@@ -354,6 +374,30 @@ body {
 
 .notification-item:hover {
   background-color: var(--light-bg);
+}
+
+.notification-delete-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.notification-delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
 }
 
 .notification-item.warning {
