@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useReducer, useMemo, useCallback } from "react";
 import {
   adminUser,
-  lockersData,
   notificationsData,
   systemStatus
 } from "../data/mockData";
@@ -11,6 +10,8 @@ import LockerCard from "../components/LockerCard";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
 import { useNavigate } from "react-router-dom";
+
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
 // helper functions
 function parseTime(str) {
@@ -25,27 +26,31 @@ function parseTime(str) {
 
 
 export default function SmartLockerDashboard() {
-  const initialLockers = lockersData.map((l) => ({
-    ...l,
-    timeLeft: parseTime(l.timeRemaining) // rename for brevity
-  }));
+  const [apiLockers, setApiLockers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   function reducer(state, action) {
-    switch (action.type) {
+      switch (action.type) {
+      case "SET_LOCKERS":
+        return action.payload.map((l) => ({
+          ...l,
+          timeLeft: l.time_remaining ? parseTime(l.time_remaining) : 0
+        }));
       case "TICK":
         return state.map((l) => {
           if (l.timeLeft > 0) {
             const newTime = l.timeLeft - 1;
             const updates = { timeLeft: newTime };
             if (newTime === 300) {
-              action.notify(`5 minutes remaining for ${l.lockerId}`);
+              action.notify(`5 minutes remaining for ${l.id}`);
             }
             if (newTime <= 0) {
               return {
                 ...l,
                 status: "Available",
                 timeLeft: 0,
-                user: null
+                current_user: null
               };
             }
             return { ...l, ...updates };
@@ -54,19 +59,19 @@ export default function SmartLockerDashboard() {
         });
       case "OPEN":
         return state.map((l) =>
-          l.lockerId === action.id && l.status === "Available"
+          l.id === action.id
             ? {
                 ...l,
                 status: "In Use",
                 timeLeft: action.duration,
-                user: "Guest User"
+                current_user: action.user || "Guest User"
               }
             : l
         );
       case "CLOSE":
         return state.map((l) =>
-          l.lockerId === action.id
-            ? { ...l, status: "Available", timeLeft: 0, user: null }
+          l.id === action.id
+            ? { ...l, status: "Available", timeLeft: 0, current_user: null }
             : l
         );
       default:
@@ -78,7 +83,30 @@ export default function SmartLockerDashboard() {
   const { addNotification, notifications, removeNotification, clearNotifications } = useNotifications();
   const navigate = useNavigate();
 
-  const [lockers, dispatch] = useReducer(reducer, initialLockers);
+  const [lockers, dispatch] = useReducer(reducer, []);
+
+  // Fetch lockers from API on component mount
+  useEffect(() => {
+    const fetchLockers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`${API_BASE_URL}/lockers/`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        dispatch({ type: "SET_LOCKERS", payload: data });
+      } catch (err) {
+        setError(err.message);
+        addNotification(`Failed to fetch lockers: ${err.message}`, 'error', 'system');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLockers();
+  }, [addNotification]);
 
   // tick interval
   useEffect(() => {
@@ -89,10 +117,33 @@ export default function SmartLockerDashboard() {
   }, [addNotification]);
 
   const handleOpen = React.useCallback(
-    (id) => {
-      setSelectedLocker(id);
-      addNotification(`${id} opened successfully. Rental period started.`, 'success', 'locker');
-      dispatch({ type: "OPEN", id, duration: 600 });
+    async (id) => {
+      try {
+        setSelectedLocker(id);
+        const response = await fetch(`${API_BASE_URL}/lockers/${id}/open/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to open locker. Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Update state with API response
+        addNotification(`${id} opened successfully. Rental period started.`, 'success', 'locker');
+        dispatch({
+          type: "OPEN",
+          id,
+          duration: data.time_remaining ? parseTime(data.time_remaining) : 600,
+          user: data.current_user || "Guest User"
+        });
+      } catch (err) {
+        addNotification(`Error opening locker: ${err.message}`, 'error', 'locker');
+      }
     },
     [setSelectedLocker, addNotification]
   );
@@ -115,6 +166,32 @@ export default function SmartLockerDashboard() {
     const expired = lockers.filter((l) => l.status === "Expired").length;
     return { total, available, occupied, expired };
   }, [lockers]);
+
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <Navbar title="Locket" admin={adminUser} onLogout={() => { logout(); navigate('/login'); }} user={user} />
+        <main className="dashboard-main">
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <p>Loading lockers...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <Navbar title="Locket" admin={adminUser} onLogout={() => { logout(); navigate('/login'); }} user={user} />
+        <main className="dashboard-main">
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>
+            <p>Error loading lockers: {error}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
@@ -173,8 +250,12 @@ export default function SmartLockerDashboard() {
           <div className="lockers-grid">
             {lockers.map((locker) => (
               <LockerCard
-                key={locker.lockerId}
-                locker={locker}
+                key={locker.id}
+                locker={{
+                  ...locker,
+                  lockerId: locker.id,
+                  user: locker.current_user
+                }}
                 onOpen={handleOpen}
                 onClose={handleClose}
               />
