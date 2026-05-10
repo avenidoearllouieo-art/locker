@@ -1,324 +1,284 @@
-import React, { useState, useEffect, useReducer, useMemo, useCallback } from "react";
-import {
-  adminUser,
-  notificationsData,
-  systemStatus
-} from "../data/mockData";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
+import { fetchLockers, rentLocker, releaseLocker } from "../services/lockerService";
 import "../styles/dashboard.css";
 import Navbar from "../components/Navbar";
 import LockerCard from "../components/LockerCard";
-import { useAuth } from "../context/AuthContext";
-import { useNotifications } from "../context/NotificationContext";
-import { useNavigate } from "react-router-dom";
-
-const API_BASE_URL = "http://127.0.0.1:8000/api";
-
-// helper functions
-function parseTime(str) {
-  if (!str || str === "--") return 0;
-  let seconds = 0;
-  const hrMatch = str.match(/(\d+)\s*hour/);
-  if (hrMatch) seconds += parseInt(hrMatch[1], 10) * 3600;
-  const minMatch = str.match(/(\d+)\s*minute/);
-  if (minMatch) seconds += parseInt(minMatch[1], 10) * 60;
-  return seconds;
-}
-
+import NotificationCenter from "../components/NotificationCenter";
+import RentalDurationModal from "../components/RentalDurationModal";
 
 export default function SmartLockerDashboard() {
-  const [apiLockers, setApiLockers] = useState([]);
+  const [lockers, setLockers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+  const [isRentModalOpen, setIsRentModalOpen] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    available: 0,
+    inUse: 0,
+    expired: 0
+  });
 
-  function reducer(state, action) {
-      switch (action.type) {
-      case "SET_LOCKERS":
-        return action.payload.map((l) => ({
-          ...l,
-          timeLeft: l.time_remaining ? parseTime(l.time_remaining) : 0
-        }));
-      case "TICK":
-        return state.map((l) => {
-          if (l.timeLeft > 0) {
-            const newTime = l.timeLeft - 1;
-            const updates = { timeLeft: newTime };
-            if (newTime === 300) {
-              action.notify(`5 minutes remaining for ${l.id}`);
-            }
-            if (newTime <= 0) {
-              return {
-                ...l,
-                status: "Available",
-                timeLeft: 0,
-                current_user: null
-              };
-            }
-            return { ...l, ...updates };
-          }
-          return l;
-        });
-      case "OPEN":
-        return state.map((l) =>
-          l.id === action.id
-            ? {
-                ...l,
-                status: "In Use",
-                timeLeft: action.duration,
-                current_user: action.user || "Guest User"
-              }
-            : l
-        );
-      case "CLOSE":
-        return state.map((l) =>
-          l.id === action.id
-            ? { ...l, status: "Available", timeLeft: 0, current_user: null }
-            : l
-        );
-      default:
-        return state;
-    }
-  }
-
-  const { selectedLocker, setSelectedLocker, logout, user } = useAuth();
-  const { addNotification, notifications, removeNotification, clearNotifications } = useNotifications();
+  const { isLoggedIn, user, logout, sessionRestored } = useAuth();
+  const { addNotification } = useNotifications();
   const navigate = useNavigate();
 
-  const [lockers, dispatch] = useReducer(reducer, []);
-
-  // Fetch lockers from API on component mount
+  // Check authentication on mount
   useEffect(() => {
-    const fetchLockers = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch(`${API_BASE_URL}/lockers/`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        dispatch({ type: "SET_LOCKERS", payload: data });
-      } catch (err) {
-        setError(err.message);
-        addNotification(`Failed to fetch lockers: ${err.message}`, 'error', 'system');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!isLoggedIn && sessionRestored) {
+      navigate("/login");
+    }
+  }, [isLoggedIn, navigate, sessionRestored]);
 
-    fetchLockers();
+  // Fetch lockers from API
+  const loadLockers = useCallback(async () => {
+    try {
+      setError("");
+      setLoading(true);
+      const data = await fetchLockers();
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setLockers(data);
+        addNotification("Lockers loaded successfully from backend", 'info', 'system');
+      } else {
+        throw new Error("Invalid data format from API");
+      }
+    } catch (err) {
+      const errorMessage = err.error || err.message || "Failed to load lockers";
+      setError(errorMessage);
+      addNotification(`Failed to load lockers: ${errorMessage}`, 'error', 'system');
+      // No fallback to mock data - backend is required
+    } finally {
+      setLoading(false);
+    }
   }, [addNotification]);
 
-  // tick interval
+  // Initialize lockers from API on mount
   useEffect(() => {
-    const timer = setInterval(() => {
-      dispatch({ type: "TICK", notify: (msg) => addNotification(msg, 'warning', 'system') });
+    loadLockers();
+  }, [loadLockers]);
+
+  // Timer tick effect - countdown for in-use lockers (local display)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLockers(prevLockers => {
+        return prevLockers.map(locker => {
+          if (locker.status === "In Use" && locker.time_left > 0) {
+            const newTimeLeft = locker.time_left - 1;
+
+            // 5-minute warning (300 seconds)
+            if (newTimeLeft === 300) {
+              addNotification(
+                `⏰ Warning: Locker #${locker.number} has 5 minutes remaining!`,
+                'warning',
+                'locker'
+              );
+            }
+
+            return {
+              ...locker,
+              time_left: newTimeLeft
+            };
+          }
+          return locker;
+        });
+      });
     }, 1000);
-    return () => clearInterval(timer);
+
+    return () => clearInterval(interval);
   }, [addNotification]);
 
-  const handleOpen = React.useCallback(
-    async (id) => {
-      try {
-        setSelectedLocker(id);
-        const response = await fetch(`${API_BASE_URL}/lockers/${id}/open/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to open locker. Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        // Update state with API response
-        addNotification(`${id} opened successfully. Rental period started.`, 'success', 'locker');
-        dispatch({
-          type: "OPEN",
-          id,
-          duration: data.time_remaining ? parseTime(data.time_remaining) : 600,
-          user: data.current_user || "Guest User"
-        });
-      } catch (err) {
-        addNotification(`Error opening locker: ${err.message}`, 'error', 'locker');
+  // Periodic refresh effect - sync with backend every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!loading && !error) {
+        loadLockers();
       }
-    },
-    [setSelectedLocker, addNotification]
-  );
+    }, 30000); // Refresh every 30 seconds
 
-  const handleClose = React.useCallback(
-    (id) => {
-      addNotification(`${id} has been released and is now available.`, 'info', 'locker');
-      dispatch({ type: "CLOSE", id });
-    },
-    [addNotification]
-  );
+    return () => clearInterval(interval);
+  }, [loadLockers, loading, error]);
 
-  // metrics memoized
-  const metrics = React.useMemo(() => {
+  // Update statistics whenever lockers change
+  useEffect(() => {
     const total = lockers.length;
-    const available = lockers.filter((l) => l.status === "Available").length;
-    const occupied = lockers.filter(
-      (l) => l.status === "In Use" || l.status === "Occupied"
-    ).length;
-    const expired = lockers.filter((l) => l.status === "Expired").length;
-    return { total, available, occupied, expired };
+    const available = lockers.filter(l => l.status === "Available").length;
+    const inUse = lockers.filter(l => l.status === "In Use").length;
+    const expired = lockers.filter(l => l.status === "Expired").length;
+
+    setStats({ total, available, inUse, expired });
   }, [lockers]);
 
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <Navbar title="Locket" admin={adminUser} onLogout={() => { logout(); navigate('/login'); }} user={user} />
-        <main className="dashboard-main">
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <p>Loading lockers...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // Handle refresh status
+  const handleRefreshStatus = async () => {
+    await loadLockers();
+  };
 
-  if (error) {
-    return (
-      <div className="dashboard-container">
-        <Navbar title="Locket" admin={adminUser} onLogout={() => { logout(); navigate('/login'); }} user={user} />
-        <main className="dashboard-main">
-          <div style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>
-            <p>Error loading lockers: {error}</p>
-          </div>
-        </main>
-      </div>
-    );
+  // Handle rent locker (open modal)
+  const handleRentLocker = () => {
+    if (stats.available > 0) {
+      setIsRentModalOpen(true);
+    } else {
+      addNotification("No lockers available for rent", 'warning', 'system');
+    }
+  };
+
+  // Handle rental confirmation from dashboard modal
+  const handleRentalConfirm = (lockerId, rentalDuration) => {
+    if (lockerId && rentalDuration) {
+      handleOpenLocker(lockerId, rentalDuration);
+      setIsRentModalOpen(false);
+    }
+  };
+
+  // Handle opening a locker with selected duration
+  const handleOpenLocker = useCallback(async (id, rentalDuration) => {
+    try {
+      await rentLocker(id, rentalDuration);
+      
+      // Refresh locker data from backend to ensure sync
+      await loadLockers();
+      
+      // Find the locker to show notification
+      const locker = lockers.find(l => l.id === id);
+      if (locker) {
+        const durationMinutes = Math.floor(rentalDuration / 60);
+        addNotification(
+          `🔓 Locker #${locker.number} has been opened. Rental started for ${durationMinutes} minutes.`,
+          'success',
+          'locker'
+        );
+      }
+    } catch (err) {
+      const errorMessage = err.error || err.message || "Failed to rent locker";
+      addNotification(`Error renting locker: ${errorMessage}`, 'error', 'locker');
+    }
+  }, [lockers, addNotification, loadLockers]);
+
+  // Handle releasing/closing a locker
+  const handleReleaseLocker = useCallback(async (id) => {
+    try {
+      await releaseLocker(id);
+      
+      // Refresh locker data from backend to ensure sync
+      await loadLockers();
+      
+      // Find the locker to show notification
+      const locker = lockers.find(l => l.id === id);
+      if (locker) {
+        addNotification(
+          `🔒 Locker #${locker.number} has been released and is now available.`,
+          'info',
+          'locker'
+        );
+      }
+    } catch (err) {
+      const errorMessage = err.error || err.message || "Failed to release locker";
+      addNotification(`Error releasing locker: ${errorMessage}`, 'error', 'locker');
+    }
+  }, [lockers, addNotification, loadLockers]);
+
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  if (loading) {
+    return <div className="loading">Loading Smart Locker System...</div>;
   }
 
   return (
-    <div className="dashboard-container">
-      <Navbar title="Locket" admin={adminUser} onLogout={() => { logout(); navigate('/login'); }} user={user} />
+    <div className="dashboard">
+      <Navbar 
+        title="Dashboard" 
+        user={user}
+        onLogout={handleLogout}
+      />
 
-
-
-
-      {/* Main Content Section */}
       <main className="dashboard-main">
-        {selectedLocker && (
-          <div className="selected-locker-banner">
-            Selected Locker: {selectedLocker}
-            <button className="btn secondary" onClick={() => { setSelectedLocker(null); }}>
-              Clear
-            </button>
+        <div className="dashboard-header">
+          <h1 className="dashboard-title">Dashboard</h1>
+          <p className="dashboard-welcome">Welcome, {user?.username || user?.name || 'User'}</p>
+        </div>
+
+        {error && (
+          <div className="error-banner" style={{ background: '#ffe0e0', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ff6b6b' }}>
+            <div style={{ marginBottom: '10px' }}>
+              <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: '#c92a2a' }}>⚠️ Backend Connection Error</p>
+              <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#555' }}>
+                Cannot connect to API at <code style={{ background: '#f0f0f0', padding: '2px 5px', borderRadius: '3px' }}>http://localhost:8000/api</code>
+              </p>
+              <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#555' }}>
+                Make sure your Django backend is running: <code style={{ background: '#f0f0f0', padding: '2px 5px', borderRadius: '3px' }}>python manage.py runserver</code>
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleRefreshStatus} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                🔄 Retry Connection
+              </button>
+            </div>
           </div>
         )}
-        {/* System Metrics Section */}
-        <section className="metrics-section">
-          <h2 className="section-title">System Metrics</h2>
-          <div className="metrics-grid">
-                {/* Total Lockers Card */}
-            <div className="metric-card total">
-              <h3 className="metric-title">Total Lockers</h3>
-              <p className="metric-value">{metrics.total}</p>
-              <p className="metric-subtitle">All units in system</p>
-            </div>
 
-            {/* Available Lockers Card */}
-            <div className="metric-card available">
-              <h3 className="metric-title">Available Lockers</h3>
-              <p className="metric-value">{metrics.available}</p>
-              <p className="metric-subtitle">Ready to use</p>
+        <section className="system-status-section">
+          <h2 className="section-title">System Status</h2>
+          <div className="dashboard-stats">
+            <div className="stat-card stat-total">
+              <p className="stat-value">{stats.total}</p>
+              <h3>Total</h3>
             </div>
-
-            {/* Occupied Lockers Card */}
-            <div className="metric-card occupied">
-              <h3 className="metric-title">Occupied Lockers</h3>
-              <p className="metric-value">{metrics.occupied}</p>
-              <p className="metric-subtitle">Currently in use</p>
+            <div className="stat-card stat-available">
+              <p className="stat-value">{stats.available}</p>
+              <h3>Available</h3>
             </div>
-
-            {/* Expired Rentals Card */}
-            <div className="metric-card expired">
-              <h3 className="metric-title">Expired Rentals</h3>
-              <p className="metric-value">{metrics.expired}</p>
-              <p className="metric-subtitle">Require attention</p>
+            <div className="stat-card stat-in-use">
+              <p className="stat-value">{stats.inUse}</p>
+              <h3>In Use</h3>
+            </div>
+            <div className="stat-card stat-expired">
+              <p className="stat-value">{stats.expired}</p>
+              <h3>Expired</h3>
             </div>
           </div>
         </section>
 
-        {/* Locker Status Section */}
-        <section className="lockers-section">
-          <h2 className="section-title">Locker Status</h2>
+        <div className="action-buttons">
+          <button className="btn btn-primary btn-large" onClick={handleRefreshStatus}>
+            Refresh Status
+          </button>
+          <button className="btn btn-outline btn-large" onClick={handleRentLocker}>
+            Rent a Locker ({stats.available} available)
+          </button>
+        </div>
+
+        <section className="all-lockers-section">
+          <h2 className="section-title">All Lockers</h2>
           <div className="lockers-grid">
-            {lockers.map((locker) => (
+            {lockers.map(locker => (
               <LockerCard
                 key={locker.id}
-                locker={{
-                  ...locker,
-                  lockerId: locker.id,
-                  user: locker.current_user
-                }}
-                onOpen={handleOpen}
-                onClose={handleClose}
+                locker={locker}
+                onOpen={(duration) => handleOpenLocker(locker.id, duration)}
+                onClose={() => handleReleaseLocker(locker.id)}
               />
             ))}
           </div>
         </section>
 
-        {/* Notifications Section */}
         <section className="notifications-section">
-          <div className="notifications-header">
-            <h2 className="section-title">System Notifications</h2>
-            {notifications.length > 0 && (
-              <button className="btn secondary clear-notifications-btn" onClick={() => clearNotifications()}>
-                Clear All
-              </button>
-            )}
-          </div>
-          <div className="notifications-list">
-            {notifications.length > 0 ? (
-              <ul className="notification-items">
-                {notifications.map((notification) => (
-                  <li
-                    key={notification.id}
-                    className={`notification-item ${notification.type}`}
-                  >
-                    <div className="notification-icon">
-                      {notification.type === "warning" && "⚠️"}
-                      {notification.type === "info" && "ℹ️"}
-                      {notification.type === "alert" && "🚨"}
-                      {notification.type === "success" && "✅"}
-                    </div>
-                    <div className="notification-content">
-                      <p className="notification-message">
-                        {notification.message}
-                      </p>
-                      <span className="notification-time">
-                        {notification.timestamp}
-                      </span>
-                    </div>
-                    <button 
-                      className="notification-delete-btn"
-                      onClick={() => removeNotification(notification.id)}
-                      aria-label="Delete notification"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="no-notifications">No notifications at this time</p>
-            )}
-          </div>
+          <NotificationCenter />
         </section>
-      </main>
 
-      {/* Footer Section */}
-      <footer className="dashboard-footer">
-        <p className="footer-status">{systemStatus}</p>
-        <p className="footer-copyright">
-          © 2026 IoT Smart Locker Vending System. All rights reserved.
-        </p>
-      </footer>
+        <RentalDurationModal 
+          isOpen={isRentModalOpen}
+          onClose={() => setIsRentModalOpen(false)}
+          onConfirm={handleRentalConfirm}
+          availableLockers={lockers.filter(l => l.status === "Available")}
+        />
+      </main>
     </div>
   );
 }

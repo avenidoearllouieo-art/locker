@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 const NotificationContext = createContext(null);
 
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
-  const [listeners, setListeners] = useState(new Set());
+  const listeners = useState(new Set())[0];
 
   // Add notification with real-time broadcast
   const addNotification = useCallback((message, type = 'info', source = 'system') => {

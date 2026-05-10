@@ -1,25 +1,29 @@
 import React from "react";
-import logoImg from "../logo.png";
 
-export default function Navbar({ title, admin, onLogout, user }) {
+export default function Navbar({ title, user, onLogout }) {
+
   return (
-    <header className="dashboard-header">
-      <div className="header-content">
-        <h1 className="system-title">
-          <img src={logoImg} alt="Locket Logo" className="logo-img" />
-          {title}
-        </h1>
-        <div className="admin-info">
-          <span className="admin-label">Administrator:</span>
-          <span className="admin-name">{admin.name}</span>
-          <span className="admin-role">({admin.role})</span>
-          {user && <span className="current-user">Logged in: {user.name}</span>}
-          {onLogout && (
-            <button className="btn secondary logout-btn" onClick={onLogout}>
-              Logout
-            </button>
-          )}
+    <header className="navbar">
+      <div className="navbar-container">
+        <div className="navbar-brand">
+          <h1 className="navbar-title">{title}</h1>
         </div>
+
+        <nav className="navbar-info">
+          <div className="user-section">
+            {user ? (
+              <>
+                <span className="label">Logged in as:</span>
+                <span className="user-name">{user.name}</span>
+                <button className="btn logout-btn" onClick={onLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <span className="label">Not logged in</span>
+            )}
+          </div>
+        </nav>
       </div>
     </header>
   );
