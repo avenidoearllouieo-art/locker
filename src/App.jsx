@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SmartLockerDashboard from "./pages/SmartLockerDashboard";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import SignUp from "./pages/SignUp";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotificationListener from "./components/NotificationListener";
@@ -19,7 +19,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
       <Route path="/login" element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />} />
-      <Route path="/signup" element={isLoggedIn ? <Navigate to="/dashboard" /> : <Signup />} />
+      <Route path="/signup" element={isLoggedIn ? <Navigate to="/dashboard" /> : <SignUp />} />
       <Route path="/dashboard" element={isLoggedIn ? <SmartLockerDashboard /> : <Navigate to="/login" />} />
     </Routes>
   );
